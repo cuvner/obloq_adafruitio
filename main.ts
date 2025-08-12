@@ -2,7 +2,11 @@
 // Wiring: P0 (TX out) -> OBLOQ RX, P1 (RX in) -> OBLOQ TX, GND->GND
 // Baud: 9600
 //% color=#3AA3E3 icon="\uf1eb" block="OBLOQ AIO"
+
+//% color=#3AA3E3 icon="\uf1eb" block="OBLOQ AIO"
 namespace obloqAio {
+    //% groups='["Setup","MQTT"]'
+    // (optional, but helps toolbox layout)
     let user = ""
     let key = ""
     let connected = false
