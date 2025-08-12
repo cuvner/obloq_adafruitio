@@ -32,7 +32,11 @@ Then open your Adafruit IO dashboard and add a block for the `test` feed to see 
 - `disconnect from Adafruit IO`  
 - `AIO connected?`
 
+
 ## Notes
 - Keep publish rate ≥ 2 s to avoid AIO free-tier throttling.
 - MQTT topics use the short form: `{username}/f/{feed}`.
 - If connect fails, double-check AIO **username** and **key** (not your account password).
+
+## Credits
+Inspired by DFRobot’s OBLOQ work for micro:bit. This extension focuses on a minimal, classroom-friendly MQTT flow for Adafruit IO. Licensed MIT.
