@@ -1,9 +1,13 @@
 {
   "name": "obloq-adafruitio",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "OBLOQ WiFi + Adafruit IO blocks for micro:bit",
-  "files": ["main.ts", "README.md"],
-  "dependencies": { "core": "*" },
+  "files": [
+    "main.ts"
+  ],
+  "dependencies": {
+    "core": "*"
+  },
   "license": "MIT",
   "public": true,
   "preferredEditor": "tsprj"
