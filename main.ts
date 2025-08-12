@@ -6,30 +6,17 @@ namespace obloqAio {
     let user = ""
     let key = ""
     let connected = false
-    let _subs: string[] = []  // remember subscribed topics (≤5)
 
-    // ---- Internal helpers ----
+    // Internal helpers
     function send(cmd: string) { serial.writeString(cmd + "\r") }
     function isAck(line: string) {
         // OBLOQ acks/status lines typically include these fragments
         return line.indexOf("|4|1|") >= 0 || line.indexOf("|2|") >= 0
     }
 
-    function tryMqttConnect(): boolean {
-        send(`|4|1|1|io.adafruit.com|1883|${user}|${key}|`)
-        basic.pause(600)
-        const line = serial.readUntil("\r")
-        return line.indexOf("|4|1|1|1|") >= 0
-    }
-
-    function resubscribeAll() {
-        for (const t of _subs) {
-            send(`|4|1|2|${t}|`)
-            basic.pause(100)
-        }
-    }
-
-    // ---- Setup ----
+    // -------------------
+    // Setup
+    // -------------------
 
     /**
      * Use OBLOQ on default pins (TX=P0, RX=P1) at 9600
@@ -50,9 +37,6 @@ namespace obloqAio {
      */
     //% group="Setup"
     //% block="use OBLOQ on TX %tx RX %rx at %baud"
-    //% tx.defl=SerialPin.P0 rx.defl=SerialPin.P1 baud.defl=BaudRate.BaudRate9600
-    //% tx.fieldEditor="gridpicker" tx.fieldOptions.columns=3
-    //% rx.fieldEditor="gridpicker" rx.fieldOptions.columns=3
     export function usePins(tx: SerialPin, rx: SerialPin, baud: BaudRate): void {
         serial.redirect(tx, rx, baud)
         serial.setRxBufferSize(128)
@@ -70,7 +54,8 @@ namespace obloqAio {
     //% pwd.defl="YourWiFiPassword"
     export function connectWifi(ssid: string, pwd: string): void {
         send(`|2|1|${ssid},${pwd}|`)
-        basic.pause(4000) // OBLOQ streams progress; give it a moment
+        // OBLOQ streams progress; give it a moment
+        basic.pause(4000)
     }
 
     /**
@@ -82,18 +67,11 @@ namespace obloqAio {
     //% block="connect Adafruit IO user %u key %k"
     export function connectAio(u: string, k: string): void {
         user = u; key = k
-        connected = tryMqttConnect()
-
-        // Gentle background reconnect loop (every ~10s)
-        control.inBackground(function () {
-            while (true) {
-                basic.pause(10000)
-                if (!connected && user && key) {
-                    connected = tryMqttConnect()
-                    if (connected) resubscribeAll()
-                }
-            }
-        })
+        send(`|4|1|1|io.adafruit.com|1883|${u}|${k}|`)
+        basic.pause(600)
+        // Read a line; treat success token as connected
+        const line = serial.readUntil("\r")
+        connected = line.indexOf("|4|1|1|1|") >= 0
     }
 
     /**
@@ -113,7 +91,9 @@ namespace obloqAio {
         connected = false
     }
 
-    // ---- MQTT ----
+    // -------------------
+    // MQTT
+    // -------------------
 
     /**
      * Publish message to a feed
@@ -122,7 +102,6 @@ namespace obloqAio {
      */
     //% group="MQTT"
     //% block="publish %msg|to feed %feed"
-    //% feed.shadow="string" feed.defl="test"
     export function publish(feed: string, msg: string | number): void {
         const topic = `${user}/f/${feed}`
         send(`|4|1|3|${topic}|${msg}|`)
@@ -136,16 +115,8 @@ namespace obloqAio {
     //% group="MQTT"
     //% block="on message on feed %feed"
     //% draggableParameters="reporter"
-    //% feed.shadow="string" feed.defl="test"
     export function onMessage(feed: string, handler: (message: string) => void): void {
         const topic = `${user}/f/${feed}`
-
-        // Guard: up to 5 topics (OBLOQ limit). Ignore duplicates.
-        if (_subs.indexOf(topic) < 0) {
-            if (_subs.length >= 5) return
-            _subs.push(topic)
-        }
-
         send(`|4|1|2|${topic}|`)
         basic.pause(300)
 
