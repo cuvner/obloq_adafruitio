@@ -1,44 +1,28 @@
-// OBLOQ + Adafruit IO for micro:bit
-// Wiring (default): micro:bit P0 -> OBLOQ RX, P1 -> OBLOQ TX, GND->GND
+// OBLOQ + Adafruit IO (minimal, known-good)
+// Wiring: P0 (TX out) -> OBLOQ RX, P1 (RX in) -> OBLOQ TX, GND->GND
 // Baud: 9600
 //% color=#3AA3E3 icon="\uf1eb" block="OBLOQ AIO"
+
+//% color=#3AA3E3 icon="\uf1eb" block="OBLOQ AIO"
 namespace obloqAio {
+    //% groups='["Setup","MQTT"]'
+    // (optional, but helps toolbox layout)
     let user = ""
     let key = ""
     let connected = false
 
-    // Internal helpers
     function send(cmd: string) { serial.writeString(cmd + "\r") }
     function isAck(line: string) {
-        // OBLOQ acks/status lines typically include these fragments
         return line.indexOf("|4|1|") >= 0 || line.indexOf("|2|") >= 0
     }
 
-    // -------------------
-    // Setup
-    // -------------------
-
     /**
-     * Use OBLOQ on default pins (TX=P0, RX=P1) at 9600
+     * Use OBLOQ on default pins (TX=P0, RX=P1) at 9600 baud
      */
     //% group="Setup"
     //% block="use OBLOQ on TX=P0 RX=P1 at 9600"
     export function useDefaultPins(): void {
         serial.redirect(SerialPin.P0, SerialPin.P1, BaudRate.BaudRate9600)
-        serial.setRxBufferSize(128)
-        basic.pause(50)
-    }
-
-    /**
-     * Choose pins and baud for OBLOQ
-     * @param tx TX pin (micro:bit -> OBLOQ RX)
-     * @param rx RX pin (micro:bit <- OBLOQ TX)
-     * @param baud UART speed
-     */
-    //% group="Setup"
-    //% block="use OBLOQ on TX %tx RX %rx at %baud"
-    export function usePins(tx: SerialPin, rx: SerialPin, baud: BaudRate): void {
-        serial.redirect(tx, rx, baud)
         serial.setRxBufferSize(128)
         basic.pause(50)
     }
@@ -54,7 +38,6 @@ namespace obloqAio {
     //% pwd.defl="YourWiFiPassword"
     export function connectWifi(ssid: string, pwd: string): void {
         send(`|2|1|${ssid},${pwd}|`)
-        // OBLOQ streams progress; give it a moment
         basic.pause(4000)
     }
 
@@ -66,10 +49,10 @@ namespace obloqAio {
     //% group="Setup"
     //% block="connect Adafruit IO user %u key %k"
     export function connectAio(u: string, k: string): void {
-        user = u; key = k
+        user = u
+        key = k
         send(`|4|1|1|io.adafruit.com|1883|${u}|${k}|`)
         basic.pause(600)
-        // Read a line; treat success token as connected
         const line = serial.readUntil("\r")
         connected = line.indexOf("|4|1|1|1|") >= 0
     }
@@ -79,21 +62,9 @@ namespace obloqAio {
      */
     //% group="Setup"
     //% block="AIO connected?"
-    export function isConnected(): boolean { return connected }
-
-    /**
-     * Disconnect from MQTT
-     */
-    //% group="Setup"
-    //% block="disconnect from Adafruit IO"
-    export function disconnect(): void {
-        send("|4|1|4|")
-        connected = false
+    export function isConnected(): boolean {
+        return connected
     }
-
-    // -------------------
-    // MQTT
-    // -------------------
 
     /**
      * Publish message to a feed
@@ -102,6 +73,7 @@ namespace obloqAio {
      */
     //% group="MQTT"
     //% block="publish %msg|to feed %feed"
+    //% feed.shadow="string" feed.defl="test"
     export function publish(feed: string, msg: string | number): void {
         const topic = `${user}/f/${feed}`
         send(`|4|1|3|${topic}|${msg}|`)
@@ -115,16 +87,24 @@ namespace obloqAio {
     //% group="MQTT"
     //% block="on message on feed %feed"
     //% draggableParameters="reporter"
+    //% feed.shadow="string" feed.defl="test"
     export function onMessage(feed: string, handler: (message: string) => void): void {
         const topic = `${user}/f/${feed}`
         send(`|4|1|2|${topic}|`)
         basic.pause(300)
-
-        // OBLOQ pushes incoming payloads as CR-terminated lines
         serial.onDataReceived("\r", function () {
             const line = serial.readUntil("\r")
-            // Ignore acks/status; deliver other lines as payload
             if (line && !isAck(line)) handler(line)
         })
+    }
+
+    /**
+     * Disconnect from MQTT
+     */
+    //% group="Setup"
+    //% block="disconnect from Adafruit IO"
+    export function disconnect(): void {
+        send("|4|1|4|")
+        connected = false
     }
 }
