@@ -1,7 +1,11 @@
 {
   "name": "obloq-adafruitio",
 <<<<<<< HEAD
+<<<<<<< HEAD
   "version": "0.2.0",
+=======
+  "version": "0.2.3",
+>>>>>>> parent of e7c4f44 (Update pxt.json back to working ex)
 =======
   "version": "0.2.3",
 >>>>>>> parent of e7c4f44 (Update pxt.json back to working ex)
