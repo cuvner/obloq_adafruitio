@@ -1,8 +1,12 @@
 {
   "name": "obloq-adafruitio",
+<<<<<<< HEAD
   "version": "0.2.0",
+=======
+  "version": "0.2.3",
+>>>>>>> parent of e7c4f44 (Update pxt.json back to working ex)
   "description": "OBLOQ WiFi + Adafruit IO blocks for micro:bit",
-  "files": ["main.ts", "README.md"],
+  "files": ["main.ts"],
   "dependencies": { "core": "*" },
   "license": "MIT",
   "public": true,
